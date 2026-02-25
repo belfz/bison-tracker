@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { listSnapshots, getSightingsBySnapshotId, getLatestSnapshot } from "./db";
+import { listSnapshots, getSightingsBySnapshotId, getLatestSnapshot, getSnapshotById } from "./db";
 
 export type AppEnv = { DB: D1Database };
 
@@ -27,14 +27,12 @@ export function createApp() {
     if (isNaN(id)) {
       return c.json({ error: "Invalid snapshot ID" }, 400);
     }
-    const sightings = await getSightingsBySnapshotId(c.env.DB, id);
-    if (sightings.length === 0) {
-      const snapshot = await getLatestSnapshot(c.env.DB);
-      if (!snapshot || snapshot.id !== id) {
-        return c.json({ error: "Snapshot not found" }, 404);
-      }
+    const snapshot = await getSnapshotById(c.env.DB, id);
+    if (!snapshot) {
+      return c.json({ error: "Snapshot not found" }, 404);
     }
-    return c.json({ sightings });
+    const sightings = await getSightingsBySnapshotId(c.env.DB, id);
+    return c.json({ snapshot, sightings });
   });
 
   return app;

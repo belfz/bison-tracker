@@ -78,6 +78,14 @@ export async function getSightingsBySnapshotId(db: D1Database, snapshotId: numbe
   return results;
 }
 
+export async function getSnapshotById(db: D1Database, id: number): Promise<SnapshotRow | null> {
+  const row = await db
+    .prepare("SELECT * FROM snapshots WHERE id = ?")
+    .bind(id)
+    .first<SnapshotRow>();
+  return row ?? null;
+}
+
 export async function getLatestSnapshot(db: D1Database): Promise<SnapshotRow | null> {
   const row = await db
     .prepare("SELECT * FROM snapshots ORDER BY fetched_at DESC LIMIT 1")
