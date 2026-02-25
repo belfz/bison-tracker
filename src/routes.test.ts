@@ -59,7 +59,7 @@ describe("API routes", () => {
   it("GET /api/snapshots returns list of snapshots", async () => {
     const res = await app.request("/api/snapshots", {}, { DB: env.DB } satisfies AppEnv);
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body: any = await res.json();
     expect(body).toHaveLength(2);
     expect(body[0].fetched_at).toBe("2026-02-25T12:00:00Z");
   });
@@ -67,7 +67,7 @@ describe("API routes", () => {
   it("GET /api/snapshots/latest returns most recent snapshot with sightings", async () => {
     const res = await app.request("/api/snapshots/latest", {}, { DB: env.DB } satisfies AppEnv);
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body: any = await res.json();
     expect(body.snapshot.fetched_at).toBe("2026-02-25T12:00:00Z");
     expect(body.sightings).toHaveLength(1);
   });
@@ -75,7 +75,7 @@ describe("API routes", () => {
   it("GET /api/snapshots/:id returns sightings for a snapshot", async () => {
     const res = await app.request("/api/snapshots/1", {}, { DB: env.DB } satisfies AppEnv);
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body: any = await res.json();
     expect(body.sightings).toHaveLength(1);
     expect(body.sightings[0].num_individuals).toBe(3);
   });
