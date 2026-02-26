@@ -8,4 +8,4 @@ crons = ["0 */6 * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "bison-tracker-db"
-database_id = "placeholder-replace-after-creation"
+database_id = "a044e3cc-bf5a-4342-a16c-30730f54691c"
