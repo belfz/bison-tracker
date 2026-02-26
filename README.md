@@ -71,13 +71,13 @@ npx wrangler d1 execute bison-tracker-db --file=./schema.sql --remote
 
 ```bash
 # List snapshots (limit, offset)
-curl "https://your-worker.workers.dev/api/snapshots?limit=10&offset=0"
+curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots?limit=10&offset=0"
 
 # Latest snapshot
-curl "https://your-worker.workers.dev/api/snapshots/latest"
+curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/latest"
 
 # Specific snapshot
-curl "https://your-worker.workers.dev/api/snapshots/1"
+curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/1"
 ```
 
 ## Architecture
