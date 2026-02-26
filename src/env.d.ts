@@ -3,3 +3,8 @@ declare module "cloudflare:test" {
     DB: D1Database
   }
 }
+
+declare module "*.sql?raw" {
+  const content: string
+  export default content
+}
