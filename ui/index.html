@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bison Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦬</text></svg>">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bison Tracker">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,6 +29,7 @@
       align-items: center;
       gap: 12px;
       user-select: none;
+      touch-action: manipulation;
     }
 
     .controls button {
@@ -38,6 +43,7 @@
       transition: background 0.15s;
       flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .controls button:hover:not(:disabled) { background: #1b4332; }
@@ -125,6 +131,9 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 18,
     }).addTo(map)
+
+    L.DomEvent.disableClickPropagation(document.getElementById("controls"))
+    L.DomEvent.disableScrollPropagation(document.getElementById("controls"))
 
     const entries = []
     let currentIndex = 0

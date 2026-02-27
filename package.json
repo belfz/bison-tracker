@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "format": "prettier --write \"src/**/*.ts\" \"vitest.config.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"vitest.config.ts\"",
-    "ui": "serve ui -l 3000"
+    "ui": "serve ui -l 3000",
+    "deploy:ui": "wrangler pages deploy ui --project-name=bison-tracker-ui"
   },
   "keywords": [],
   "author": "",
