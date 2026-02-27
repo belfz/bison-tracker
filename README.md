@@ -5,6 +5,8 @@ A Cloudflare Worker that scrapes a public GeoJSON API for European bison (żubr)
 **Live UI:** [https://bison-tracker-ui.pages.dev](https://bison-tracker-ui.pages.dev)
 **API base:** `https://bison-tracker.bison-tracker.workers.dev`
 
+![Bison Tracker mobile view](images/mobile_view.jpeg)
+
 ## Prerequisites
 
 - Node.js 18+
