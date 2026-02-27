@@ -65,4 +65,25 @@ describe("API routes", () => {
     const res = await app.request("/api/snapshots/999", {}, { DB: env.DB } satisfies AppEnv)
     expect(res.status).toBe(404)
   })
+
+  it("GET /api/snapshots/recent returns snapshots with sightings", async () => {
+    const res = await app.request("/api/snapshots/recent", {}, { DB: env.DB } satisfies AppEnv)
+    expect(res.status).toBe(200)
+    const body: any = await res.json()
+    expect(body).toHaveLength(2)
+    expect(body[0].snapshot.fetched_at).toBe("2026-02-25T12:00:00Z")
+    expect(body[0].sightings).toHaveLength(1)
+    expect(body[1].snapshot.fetched_at).toBe("2026-02-25T06:00:00Z")
+    expect(body[1].sightings).toHaveLength(1)
+  })
+
+  it("GET /api/snapshots/recent?before= paginates correctly", async () => {
+    const res = await app.request("/api/snapshots/recent?before=2", {}, {
+      DB: env.DB,
+    } satisfies AppEnv)
+    expect(res.status).toBe(200)
+    const body: any = await res.json()
+    expect(body).toHaveLength(1)
+    expect(body[0].snapshot.id).toBe(1)
+  })
 })

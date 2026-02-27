@@ -87,6 +87,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const API_BASE = "https://bison-tracker.bison-tracker.workers.dev"
+    const BATCH_SIZE = 50
+    const PREFETCH_THRESHOLD = 5
 
     const map = L.map("map").setView([52.8, 16.5], 8)
 
@@ -95,9 +97,11 @@
       maxZoom: 18,
     }).addTo(map)
 
-    let snapshots = []
+    const entries = []
     let currentIndex = 0
     let rectangleLayer = L.layerGroup().addTo(map)
+    let allLoaded = false
+    let fetching = false
 
     const btnPrev = document.getElementById("btn-prev")
     const btnNext = document.getElementById("btn-next")
@@ -118,15 +122,28 @@
       })
     }
 
-    function updateButtons() {
-      btnPrev.disabled = currentIndex >= snapshots.length - 1
-      btnNext.disabled = currentIndex <= 0
+    function updateControls() {
+      const canGoPrev = currentIndex < entries.length - 1 || !allLoaded
+      const canGoNext = currentIndex > 0
+      btnPrev.disabled = !canGoPrev
+      btnNext.disabled = !canGoNext
     }
 
-    async function loadSnapshot(snapshotId) {
-      const res = await fetch(`${API_BASE}/api/snapshots/${snapshotId}`)
-      const data = await res.json()
-      return data
+    async function fetchBatch(beforeId) {
+      if (fetching || allLoaded) return
+      fetching = true
+      try {
+        const url = beforeId
+          ? `${API_BASE}/api/snapshots/recent?limit=${BATCH_SIZE}&before=${beforeId}`
+          : `${API_BASE}/api/snapshots/recent?limit=${BATCH_SIZE}`
+        const res = await fetch(url)
+        const batch = await res.json()
+        if (batch.length < BATCH_SIZE) allLoaded = true
+        entries.push(...batch)
+        updateControls()
+      } finally {
+        fetching = false
+      }
     }
 
     function renderSightings(sightings) {
@@ -155,24 +172,25 @@
     }
 
     async function showSnapshot(index) {
+      if (index < 0 || index >= entries.length) return
       currentIndex = index
-      const snapshot = snapshots[index]
+      const { snapshot, sightings } = entries[index]
 
       snapshotDate.textContent = formatDate(snapshot.fetched_at)
       snapshotMeta.textContent = `Snapshot #${snapshot.id} · ${snapshot.feature_count} sighting${snapshot.feature_count !== 1 ? "s" : ""}`
-      updateButtons()
 
-      const data = await loadSnapshot(snapshot.id)
-      renderSightings(data.sightings)
+      renderSightings(sightings)
+      updateControls()
+
+      const remaining = entries.length - 1 - currentIndex
+      if (remaining < PREFETCH_THRESHOLD && !allLoaded) {
+        const oldestId = entries[entries.length - 1].snapshot.id
+        await fetchBatch(oldestId)
+      }
     }
 
-    btnPrev.addEventListener("click", () => {
-      if (currentIndex < snapshots.length - 1) showSnapshot(currentIndex + 1)
-    })
-
-    btnNext.addEventListener("click", () => {
-      if (currentIndex > 0) showSnapshot(currentIndex - 1)
-    })
+    btnPrev.addEventListener("click", () => showSnapshot(currentIndex + 1))
+    btnNext.addEventListener("click", () => showSnapshot(currentIndex - 1))
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft") btnPrev.click()
@@ -181,17 +199,16 @@
 
     async function init() {
       try {
-        const res = await fetch(`${API_BASE}/api/snapshots?limit=1000`)
-        snapshots = await res.json()
+        await fetchBatch()
 
-        if (snapshots.length === 0) {
+        if (entries.length === 0) {
           loading.textContent = "No snapshots yet. Wait for the first cron run."
           return
         }
 
         loading.style.display = "none"
         controls.style.display = "flex"
-        await showSnapshot(0)
+        showSnapshot(0)
       } catch (err) {
         loading.textContent = `Error: ${err.message}`
       }

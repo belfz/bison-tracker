@@ -110,3 +110,43 @@ export async function getLatestSnapshot(db: D1Database): Promise<SnapshotRow | n
     .first<SnapshotRow>()
   return row ?? null
 }
+
+export interface SnapshotWithSightings {
+  snapshot: SnapshotRow
+  sightings: SightingRow[]
+}
+
+export async function getRecentSnapshotsWithSightings(
+  db: D1Database,
+  limit: number,
+  beforeId?: number,
+): Promise<SnapshotWithSightings[]> {
+  const snapshotQuery = beforeId
+    ? "SELECT * FROM snapshots WHERE id < ? ORDER BY fetched_at DESC LIMIT ?"
+    : "SELECT * FROM snapshots ORDER BY fetched_at DESC LIMIT ?"
+
+  const { results: snapshots } = beforeId
+    ? await db.prepare(snapshotQuery).bind(beforeId, limit).all<SnapshotRow>()
+    : await db.prepare(snapshotQuery).bind(limit).all<SnapshotRow>()
+
+  if (snapshots.length === 0) return []
+
+  const ids = snapshots.map((s) => s.id)
+  const placeholders = ids.map(() => "?").join(",")
+  const { results: allSightings } = await db
+    .prepare(`SELECT * FROM sightings WHERE snapshot_id IN (${placeholders})`)
+    .bind(...ids)
+    .all<SightingRow>()
+
+  const sightingsBySnapshot = new Map<number, SightingRow[]>()
+  for (const s of allSightings) {
+    const list = sightingsBySnapshot.get(s.snapshot_id) ?? []
+    list.push(s)
+    sightingsBySnapshot.set(s.snapshot_id, list)
+  }
+
+  return snapshots.map((snapshot) => ({
+    snapshot,
+    sightings: sightingsBySnapshot.get(snapshot.id) ?? [],
+  }))
+}
