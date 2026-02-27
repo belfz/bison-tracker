@@ -50,6 +50,8 @@
     .controls button:active:not(:disabled) { background: #1b4332; }
     .controls button:disabled { background: #ccc; cursor: not-allowed; }
 
+    .snapshot-date.live { color: #c2410c; }
+
     .snapshot-info {
       text-align: center;
       flex: 1;
@@ -161,10 +163,10 @@
     }
 
     function updateControls() {
-      const canGoPrev = currentIndex < entries.length - 1 || !allLoaded
-      const canGoNext = currentIndex > 0
-      btnPrev.disabled = !canGoPrev
-      btnNext.disabled = !canGoNext
+      btnPrev.disabled = !(currentIndex < entries.length - 1 || !allLoaded)
+      btnNext.disabled = currentIndex <= 0
+      const isLive = entries[currentIndex]?.snapshot.id === null
+      snapshotDate.classList.toggle("live", isLive)
     }
 
     async function fetchBatch(beforeId) {
@@ -214,16 +216,21 @@
       currentIndex = index
       const { snapshot, sightings } = entries[index]
 
-      snapshotDate.textContent = formatDate(snapshot.fetched_at)
-      snapshotMeta.textContent = `Snapshot #${snapshot.id} · ${snapshot.feature_count} sighting${snapshot.feature_count !== 1 ? "s" : ""}`
+      if (snapshot.id === null) {
+        snapshotDate.textContent = "Live"
+        snapshotMeta.textContent = `${sightings.length} sighting${sightings.length !== 1 ? "s" : ""} · just now`
+      } else {
+        snapshotDate.textContent = formatDate(snapshot.fetched_at)
+        snapshotMeta.textContent = `Snapshot #${snapshot.id} · ${snapshot.feature_count} sighting${snapshot.feature_count !== 1 ? "s" : ""}`
+      }
 
       renderSightings(sightings)
       updateControls()
 
       const remaining = entries.length - 1 - currentIndex
       if (remaining < PREFETCH_THRESHOLD && !allLoaded) {
-        const oldestId = entries[entries.length - 1].snapshot.id
-        await fetchBatch(oldestId)
+        const lastStored = [...entries].reverse().find((e) => e.snapshot.id !== null)
+        if (lastStored) await fetchBatch(lastStored.snapshot.id)
       }
     }
 
@@ -237,10 +244,19 @@
 
     async function init() {
       try {
-        await fetchBatch()
+        const [liveRes] = await Promise.allSettled([
+          fetch(`${API_BASE}/api/snapshots/live`).then((r) =>
+            r.ok ? r.json() : Promise.reject(),
+          ),
+          fetchBatch(),
+        ])
+
+        if (liveRes.status === "fulfilled") {
+          entries.unshift(liveRes.value)
+        }
 
         if (entries.length === 0) {
-          loading.textContent = "No snapshots yet. Wait for the first cron run."
+          loading.textContent = "No data available yet."
           return
         }
 

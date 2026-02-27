@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { env } from "cloudflare:test"
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import { env, fetchMock } from "cloudflare:test"
 import { createApp, type AppEnv } from "./routes"
 import { applySchema } from "./test-utils"
 
@@ -85,5 +85,61 @@ describe("API routes", () => {
     const body: any = await res.json()
     expect(body).toHaveLength(1)
     expect(body[0].snapshot.id).toBe(1)
+  })
+
+  it("GET /api/snapshots/live returns parsed live data", async () => {
+    const sampleGeoJson = JSON.stringify({
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [2337709, 6848757],
+                [2337709, 6852089],
+                [2341041, 6852089],
+                [2341041, 6848757],
+                [2337709, 6848757],
+              ],
+            ],
+          },
+          properties: { aktualnosc: 3, ile_osobnikow: 2, plec: "f" },
+        },
+      ],
+    })
+
+    fetchMock.activate()
+    fetchMock
+      .get("https://www.zubry.hmcloud.pl")
+      .intercept({ path: /aktualne_kwadraty\.geojson/ })
+      .reply(200, sampleGeoJson, { headers: { "Content-Type": "application/json" } })
+
+    const res = await app.request("/api/snapshots/live", {}, { DB: env.DB } satisfies AppEnv)
+    expect(res.status).toBe(200)
+    const body: any = await res.json()
+    expect(body.snapshot.id).toBeNull()
+    expect(body.snapshot.feature_count).toBe(1)
+    expect(body.sightings).toHaveLength(1)
+    expect(body.sightings[0].num_individuals).toBe(2)
+    expect(body.sightings[0].sex).toBe("f")
+    expect(body.sightings[0].centroid_lat).toBeCloseTo(52.2, 0)
+    expect(body.sightings[0].centroid_lon).toBeCloseTo(21.0, 0)
+
+    fetchMock.deactivate()
+  })
+
+  it("GET /api/snapshots/live returns 502 on upstream failure", async () => {
+    fetchMock.activate()
+    fetchMock
+      .get("https://www.zubry.hmcloud.pl")
+      .intercept({ path: /aktualne_kwadraty\.geojson/ })
+      .reply(500, "Internal Server Error")
+
+    const res = await app.request("/api/snapshots/live", {}, { DB: env.DB } satisfies AppEnv)
+    expect(res.status).toBe(502)
+
+    fetchMock.deactivate()
   })
 })

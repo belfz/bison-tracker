@@ -1,9 +1,7 @@
 import { createApp, type AppEnv } from "./routes"
 import { parseGeoJsonFeatures, hashResponse } from "./scraper"
 import { findSnapshotByHash, insertSnapshot, insertSightings } from "./db"
-
-const GEOJSON_URL =
-  "https://www.zubry.hmcloud.pl/bisonlife/mapa/map_files/gj_public/aktualne_kwadraty.geojson"
+import { GEOJSON_URL } from "./config"
 
 const app = createApp()
 

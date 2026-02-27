@@ -7,6 +7,8 @@ import {
   getSnapshotById,
   getRecentSnapshotsWithSightings,
 } from "./db"
+import { parseGeoJsonFeatures } from "./scraper"
+import { GEOJSON_URL } from "./config"
 
 export type AppEnv = { DB: D1Database }
 
@@ -31,6 +33,58 @@ export function createApp() {
     }
     const results = await getRecentSnapshotsWithSightings(c.env.DB, limit, beforeId)
     return c.json(results)
+  })
+
+  app.get("/api/snapshots/live", async (c) => {
+    const cacheKey = new Request(
+      new URL("/api/snapshots/live", c.req.url).toString(),
+    )
+    try {
+      const cached = await caches.default.match(cacheKey)
+      if (cached) return new Response(cached.body, cached)
+    } catch {
+      // Cache API unavailable (e.g. in tests)
+    }
+
+    const response = await fetch(GEOJSON_URL)
+    if (!response.ok) {
+      return c.json({ error: "Upstream API unavailable" }, 502)
+    }
+    const raw = await response.text()
+    const parsed = parseGeoJsonFeatures(raw)
+    const sightings = parsed.map((s) => ({
+      id: null,
+      snapshot_id: null,
+      centroid_lat: s.centroidLat,
+      centroid_lon: s.centroidLon,
+      bbox_min_lat: s.bboxMinLat,
+      bbox_min_lon: s.bboxMinLon,
+      bbox_max_lat: s.bboxMaxLat,
+      bbox_max_lon: s.bboxMaxLon,
+      num_individuals: s.numIndividuals,
+      sex: s.sex,
+    }))
+    const body = {
+      snapshot: {
+        id: null,
+        fetched_at: new Date().toISOString(),
+        feature_count: sightings.length,
+        raw_hash: null,
+      },
+      sightings,
+    }
+    try {
+      const cacheable = new Response(JSON.stringify(body), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300",
+        },
+      })
+      c.executionCtx.waitUntil(caches.default.put(cacheKey, cacheable))
+    } catch {
+      // Cache API or executionCtx unavailable
+    }
+    return c.json(body)
   })
 
   app.get("/api/snapshots/latest", async (c) => {
