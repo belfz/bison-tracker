@@ -1,10 +1,13 @@
 import { Hono } from "hono"
+import { cors } from "hono/cors"
 import { listSnapshots, getSightingsBySnapshotId, getLatestSnapshot, getSnapshotById } from "./db"
 
 export type AppEnv = { DB: D1Database }
 
 export function createApp() {
   const app = new Hono<{ Bindings: AppEnv }>()
+
+  app.use("/api/*", cors())
 
   app.get("/api/snapshots", async (c) => {
     const limit = Number(c.req.query("limit") ?? 50)
