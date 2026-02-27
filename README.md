@@ -1,6 +1,9 @@
 # Bison Tracker
 
-A Cloudflare Worker that scrapes a public GeoJSON API for European bison (żubr) herd locations in Poland every 6 hours and stores parsed sighting data in a Cloudflare D1 database. Provides a REST API for querying historical data.
+A Cloudflare Worker that scrapes a public GeoJSON API for European bison (żubr) herd locations in western Poland every 6 hours and stores parsed sighting data in a Cloudflare D1 database. Includes a REST API for querying historical data and a map UI for browsing sightings over time.
+
+**Live UI:** [https://bison-tracker-ui.pages.dev](https://bison-tracker-ui.pages.dev)
+**API base:** `https://bison-tracker.bison-tracker.workers.dev`
 
 ## Prerequisites
 
@@ -31,6 +34,8 @@ npx wrangler d1 execute bison-tracker-db --file=./schema.sql
 
 ## Local Development
 
+Start the Worker locally:
+
 ```bash
 npm run dev
 ```
@@ -41,6 +46,12 @@ Test the cron trigger locally:
 curl "http://localhost:8787/__scheduled?cron=0+*/6+*+*+*"
 ```
 
+Serve the UI locally (requires updating `API_BASE` in `ui/index.html` to `http://localhost:8787`):
+
+```bash
+npm run ui
+```
+
 ## Tests
 
 ```bash
@@ -49,31 +60,52 @@ npm test
 
 ## Deployment
 
+Deploy the Worker (API + scraper):
+
 ```bash
 npm run deploy
 ```
 
-After deploying, apply the schema to the remote D1 database:
+Deploy the UI to Cloudflare Pages:
+
+```bash
+npm run deploy:ui
+```
+
+On first deploy, apply the schema to the remote D1 database:
 
 ```bash
 npx wrangler d1 execute bison-tracker-db --file=./schema.sql --remote
 ```
 
+## UI
+
+The `ui/` directory contains a single-page map application built with Leaflet. It displays bison sighting rectangles on a map of western Poland (Poznań–Wałcz area) and lets you step through snapshots over time with Prev/Next controls.
+
+On load the UI fetches live data from the source API (proxied through the Worker) and displays it as the default view. Historical snapshots are loaded in batches of 50 and cached client-side for fast navigation. Older batches are prefetched automatically as you approach the end of the loaded data.
+
+The UI is mobile-friendly and can be pinned to the iOS home screen as a web app.
+
 ## API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/snapshots` | List snapshots (paginated) |
-| GET | `/api/snapshots/latest` | Most recent snapshot with sightings |
+| GET | `/api/snapshots` | List snapshots (paginated via `limit` and `offset`) |
+| GET | `/api/snapshots/recent` | Recent snapshots with sightings (cursor-based via `limit` and `before`) |
+| GET | `/api/snapshots/live` | Live proxy of the source API (cached for 5 min on the edge) |
+| GET | `/api/snapshots/latest` | Most recent stored snapshot with sightings |
 | GET | `/api/snapshots/:id` | Specific snapshot with its sightings |
 
 ### Examples
 
 ```bash
-# List snapshots (limit, offset)
-curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots?limit=10&offset=0"
+# Recent snapshots with sightings (batch)
+curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/recent?limit=10"
 
-# Latest snapshot
+# Live data from source
+curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/live"
+
+# Latest stored snapshot
 curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/latest"
 
 # Specific snapshot
@@ -82,7 +114,7 @@ curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/1"
 
 ## Architecture
 
-Single Cloudflare Worker handling both scheduled scraping (every 6 hours) and API serving. See [docs/plans/2026-02-25-bison-tracker-design.md](docs/plans/2026-02-25-bison-tracker-design.md) for full design.
+Single Cloudflare Worker handling both scheduled scraping (every 6 hours) and API serving. The UI is a static site hosted on Cloudflare Pages.
 
 ## Data Source
 
