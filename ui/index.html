@@ -76,9 +76,10 @@
         left: 8px;
         right: 8px;
         transform: none;
-        bottom: 16px;
+        bottom: 24px;
         padding: 10px 12px;
         gap: 8px;
+        min-height: 64px;
       }
 
       .controls button {
@@ -150,9 +151,16 @@
     const loading = document.getElementById("loading")
     const controls = document.getElementById("controls")
 
+    function timeEmoji(hour) {
+      if (hour >= 6 && hour < 12) return "🌅"
+      if (hour >= 12 && hour < 18) return "☀️"
+      if (hour >= 18 && hour < 22) return "🌄"
+      return "🌙"
+    }
+
     function formatDate(iso) {
       const d = new Date(iso)
-      return d.toLocaleDateString("en-GB", {
+      const text = d.toLocaleDateString("en-GB", {
         weekday: "short",
         year: "numeric",
         month: "short",
@@ -160,6 +168,7 @@
         hour: "2-digit",
         minute: "2-digit",
       })
+      return `${timeEmoji(d.getHours())} ${text}`
     }
 
     function updateControls() {
