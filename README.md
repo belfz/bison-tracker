@@ -48,7 +48,7 @@ Test the cron trigger locally:
 curl "http://localhost:8787/__scheduled?cron=0+*/6+*+*+*"
 ```
 
-Serve the UI locally (requires updating `API_BASE` in `ui/index.html` to `http://localhost:8787`):
+Serve the UI locally with Vite (requires updating `API_BASE` in `ui/src/main.ts` to `http://localhost:8787`):
 
 ```bash
 npm run ui
@@ -82,7 +82,7 @@ npx wrangler d1 execute bison-tracker-db --file=./schema.sql --remote
 
 ## UI
 
-The `ui/` directory contains a single-page map application built with Leaflet. It displays bison sighting rectangles on a map of western Poland (Poznań–Wałcz area) and lets you step through snapshots over time with Prev/Next controls.
+The `ui/` directory contains a single-page map application built with TypeScript, Leaflet, and Vite. It displays bison sighting rectangles on a map of western Poland (Poznań–Wałcz area) and lets you step through snapshots over time with Prev/Next controls.
 
 On load the UI fetches live data from the source API (proxied through the Worker) and displays it as the default view. Historical snapshots are loaded in batches of 50 and cached client-side for fast navigation. Older batches are prefetched automatically as you approach the end of the loaded data.
 
