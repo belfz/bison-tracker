@@ -1,6 +1,6 @@
 # Bison Tracker
 
-A Cloudflare Worker that scrapes a public GeoJSON API for European bison (żubr) herd locations in western Poland every 6 hours and stores parsed sighting data in a Cloudflare D1 database. Includes a REST API for querying historical data and a map UI for browsing sightings over time.
+A Cloudflare Worker that scrapes a public GeoJSON API for European bison (żubr) herd locations in western Poland every 2 hours and stores parsed sighting data in a Cloudflare D1 database. Includes a REST API for querying historical data and a map UI for browsing sightings over time.
 
 **Live UI:** [https://master.bison-tracker-ui.pages.dev/](https://master.bison-tracker-ui.pages.dev/)
 **API base:** `https://bison-tracker.bison-tracker.workers.dev`
@@ -116,7 +116,7 @@ curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/1"
 
 ## Architecture
 
-Single Cloudflare Worker handling both scheduled scraping (every 6 hours) and API serving. The UI is a static site hosted on Cloudflare Pages.
+Single Cloudflare Worker handling both scheduled scraping (every 2 hours) and API serving. The UI is a static site hosted on Cloudflare Pages.
 
 ## Data Source
 
