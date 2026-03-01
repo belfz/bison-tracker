@@ -86,6 +86,8 @@ The `ui/` directory contains a single-page map application built with Svelte 5, 
 
 On load the UI fetches live data from the source API (proxied through the Worker) and displays it as the default view. Historical snapshots are loaded in batches of 50 and cached client-side for fast navigation. Older batches are prefetched automatically as you approach the end of the loaded data.
 
+A toolbar in the top-right corner lets you toggle between the snapshot view and a frequency heatmap that aggregates all historical sightings, showing which areas bison visit most often.
+
 The UI is mobile-friendly and can be pinned to the iOS home screen as a web app.
 
 ## API
@@ -97,6 +99,7 @@ The UI is mobile-friendly and can be pinned to the iOS home screen as a web app.
 | GET | `/api/snapshots/live` | Live proxy of the source API (cached for 5 min on the edge) |
 | GET | `/api/snapshots/latest` | Most recent stored snapshot with sightings |
 | GET | `/api/snapshots/:id` | Specific snapshot with its sightings |
+| GET | `/api/heatmap` | Frequency heatmap of sighting locations (`months` param, cached 6 hrs) |
 
 ### Examples
 
@@ -112,6 +115,9 @@ curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/latest"
 
 # Specific snapshot
 curl "https://bison-tracker.bison-tracker.workers.dev/api/snapshots/1"
+
+# Heatmap (last 12 months by default)
+curl "https://bison-tracker.bison-tracker.workers.dev/api/heatmap?months=6"
 ```
 
 ## Architecture

@@ -111,6 +111,26 @@ export async function getLatestSnapshot(db: D1Database): Promise<SnapshotRow | n
   return row ?? null
 }
 
+export interface HeatmapRow {
+  centroid_lat: number
+  centroid_lon: number
+  frequency: number
+}
+
+export async function getHeatmapData(db: D1Database, months: number): Promise<HeatmapRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT centroid_lat, centroid_lon, COUNT(*) as frequency
+       FROM sightings
+       JOIN snapshots ON snapshots.id = sightings.snapshot_id
+       WHERE snapshots.fetched_at >= datetime('now', '-' || ? || ' months')
+       GROUP BY centroid_lat, centroid_lon`,
+    )
+    .bind(months)
+    .all<HeatmapRow>()
+  return results
+}
+
 export interface SnapshotWithSightings {
   snapshot: SnapshotRow
   sightings: SightingRow[]

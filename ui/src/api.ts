@@ -1,4 +1,4 @@
-import type { Entry } from "./types"
+import type { Entry, HeatmapPoint } from "./types"
 
 export const API_BASE = "https://bison-tracker.bison-tracker.workers.dev"
 const BATCH_SIZE = 50
@@ -25,4 +25,11 @@ export async function fetchLive(): Promise<Entry> {
   const res = await fetch(`${API_BASE}/api/snapshots/live`)
   if (!res.ok) throw new Error("Upstream unavailable")
   return res.json()
+}
+
+export async function fetchHeatmap(months = 12): Promise<HeatmapPoint[]> {
+  const res = await fetch(`${API_BASE}/api/heatmap?months=${months}`)
+  if (!res.ok) throw new Error("Failed to load heatmap data")
+  const data: { points: HeatmapPoint[] } = await res.json()
+  return data.points
 }

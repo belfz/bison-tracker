@@ -6,6 +6,7 @@ import {
   getLatestSnapshot,
   getSnapshotById,
   getRecentSnapshotsWithSightings,
+  getHeatmapData,
 } from "./db"
 import { parseGeoJsonFeatures } from "./scraper"
 import { GEOJSON_URL } from "./config"
@@ -78,6 +79,44 @@ export function createApp() {
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "public, max-age=300",
+        },
+      })
+      c.executionCtx.waitUntil(caches.default.put(cacheKey, cacheable))
+    } catch {
+      // Cache API or executionCtx unavailable
+    }
+    return c.json(body)
+  })
+
+  app.get("/api/heatmap", async (c) => {
+    const months = Math.min(24, Math.max(1, Number(c.req.query("months")) || 12))
+
+    const cacheKey = new Request(
+      new URL(`/api/heatmap?months=${months}`, c.req.url).toString(),
+    )
+    try {
+      const cached = await caches.default.match(cacheKey)
+      if (cached) return new Response(cached.body, cached)
+    } catch {
+      // Cache API unavailable
+    }
+
+    const points = await getHeatmapData(c.env.DB, months)
+    const body = {
+      points: points.map((p) => ({
+        lat: p.centroid_lat,
+        lon: p.centroid_lon,
+        frequency: p.frequency,
+      })),
+      months,
+      generated_at: new Date().toISOString(),
+    }
+
+    try {
+      const cacheable = new Response(JSON.stringify(body), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=21600",
         },
       })
       c.executionCtx.waitUntil(caches.default.put(cacheKey, cacheable))

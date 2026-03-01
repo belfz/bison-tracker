@@ -22,3 +22,11 @@ export interface Entry {
   snapshot: Snapshot
   sightings: Sighting[]
 }
+
+export interface HeatmapPoint {
+  lat: number
+  lon: number
+  frequency: number
+}
+
+export type ViewMode = "snapshots" | "heatmap"

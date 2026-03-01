@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import type { Entry } from "./types"
-  import { fetchBatch, fetchLive } from "./api"
+  import type { Entry, HeatmapPoint, ViewMode } from "./types"
+  import { fetchBatch, fetchLive, fetchHeatmap } from "./api"
   import BisonMap from "./components/BisonMap.svelte"
   import Controls from "./components/Controls.svelte"
+  import Toolbar from "./components/Toolbar.svelte"
   import LoadingOverlay from "./components/LoadingOverlay.svelte"
 
   const PREFETCH_THRESHOLD = 5
@@ -13,6 +14,10 @@
   let allLoaded = $state(false)
   let fetching = $state(false)
   let loadingMessage: string | null = $state("Loading snapshots...")
+
+  let mode: ViewMode = $state("snapshots")
+  let heatmapPoints: HeatmapPoint[] = $state([])
+  let heatmapLoaded = $state(false)
 
   let currentEntry = $derived(entries[currentIndex])
   let canGoPrev = $derived(currentIndex < entries.length - 1 || !allLoaded)
@@ -50,8 +55,21 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
+    if (mode !== "snapshots") return
     if (e.key === "ArrowLeft") goPrev()
     if (e.key === "ArrowRight") goNext()
+  }
+
+  async function handleModeChange(newMode: ViewMode) {
+    mode = newMode
+    if (newMode === "heatmap" && !heatmapLoaded) {
+      try {
+        heatmapPoints = await fetchHeatmap()
+        heatmapLoaded = true
+      } catch {
+        heatmapPoints = []
+      }
+    }
   }
 
   onMount(async () => {
@@ -77,18 +95,25 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<BisonMap sightings={currentEntry?.sightings ?? []} />
+<BisonMap
+  sightings={currentEntry?.sightings ?? []}
+  {heatmapPoints}
+  {mode}
+/>
 
 {#if loadingMessage}
   <LoadingOverlay message={loadingMessage} />
-{:else if currentEntry}
-  <Controls
-    entry={currentEntry}
-    {canGoPrev}
-    {canGoNext}
-    onPrev={goPrev}
-    onNext={goNext}
-  />
+{:else}
+  <Toolbar {mode} onModeChange={handleModeChange} />
+  {#if mode === "snapshots" && currentEntry}
+    <Controls
+      entry={currentEntry}
+      {canGoPrev}
+      {canGoNext}
+      onPrev={goPrev}
+      onNext={goNext}
+    />
+  {/if}
 {/if}
 
 <style>

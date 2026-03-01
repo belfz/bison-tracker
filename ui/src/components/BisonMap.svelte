@@ -2,13 +2,23 @@
   import { onMount } from "svelte"
   import L from "leaflet"
   import "leaflet/dist/leaflet.css"
-  import type { Sighting } from "../types"
+  import "leaflet.heat"
+  import type { Sighting, HeatmapPoint, ViewMode } from "../types"
 
-  let { sightings }: { sightings: Sighting[] } = $props()
+  let {
+    sightings,
+    heatmapPoints,
+    mode,
+  }: {
+    sightings: Sighting[]
+    heatmapPoints: HeatmapPoint[]
+    mode: ViewMode
+  } = $props()
 
   let mapEl: HTMLDivElement
   let map: L.Map
   let rectangleLayer: L.LayerGroup
+  let heatLayer: L.Layer | null = null
 
   onMount(() => {
     map = L.map(mapEl).setView([52.8, 16.5], 8)
@@ -27,9 +37,13 @@
   })
 
   $effect(() => {
-    if (!rectangleLayer) return
+    if (!rectangleLayer || !map) return
 
     rectangleLayer.clearLayers()
+
+    if (mode !== "snapshots") {
+      return
+    }
 
     for (const s of sightings) {
       const bounds: L.LatLngBoundsExpression = [
@@ -51,6 +65,42 @@
 
       rectangleLayer.addLayer(rect)
     }
+  })
+
+  $effect(() => {
+    if (!map) return
+
+    if (heatLayer) {
+      map.removeLayer(heatLayer)
+      heatLayer = null
+    }
+
+    if (mode !== "heatmap" || heatmapPoints.length === 0) {
+      return
+    }
+
+    const maxFreq = Math.max(...heatmapPoints.map((p) => p.frequency))
+    const points: [number, number, number][] = heatmapPoints.map((p) => [
+      p.lat,
+      p.lon,
+      p.frequency / maxFreq,
+    ])
+
+    heatLayer = (L as any).heatLayer(points, {
+      radius: 30,
+      blur: 25,
+      maxZoom: 10,
+      max: 1,
+      minOpacity: 0.3,
+      gradient: {
+        0.2: "#ffffb2",
+        0.4: "#fecc5c",
+        0.6: "#fd8d3c",
+        0.8: "#f03b20",
+        1.0: "#bd0026",
+      },
+    })
+    heatLayer!.addTo(map)
   })
 </script>
 

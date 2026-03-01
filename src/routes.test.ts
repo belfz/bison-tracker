@@ -87,6 +87,40 @@ describe("API routes", () => {
     expect(body[0].snapshot.id).toBe(1)
   })
 
+  it("GET /api/heatmap returns frequency-based heatmap data", async () => {
+    // Seed a third snapshot at the same grid square as snapshot 1
+    await env.DB.prepare(
+      "INSERT INTO snapshots (fetched_at, feature_count, raw_hash) VALUES (?, ?, ?)",
+    )
+      .bind("2026-02-25T18:00:00Z", 1, "hash3")
+      .run()
+    await env.DB.prepare(
+      `INSERT INTO sightings (snapshot_id, centroid_lat, centroid_lon, bbox_min_lat, bbox_min_lon, bbox_max_lat, bbox_max_lon, num_individuals, sex)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(3, 52.5, 21.0, 52.4, 20.9, 52.6, 21.1, 4, "m")
+      .run()
+
+    const res = await app.request("/api/heatmap", {}, { DB: env.DB } satisfies AppEnv)
+    expect(res.status).toBe(200)
+    const body: any = await res.json()
+    expect(body.months).toBe(12)
+    expect(body.points).toHaveLength(2)
+
+    const point52 = body.points.find((p: any) => p.lat === 52.5)
+    expect(point52.frequency).toBe(2)
+
+    const point53 = body.points.find((p: any) => p.lat === 53.0)
+    expect(point53.frequency).toBe(1)
+  })
+
+  it("GET /api/heatmap?months= clamps to valid range", async () => {
+    const res = await app.request("/api/heatmap?months=99", {}, { DB: env.DB } satisfies AppEnv)
+    expect(res.status).toBe(200)
+    const body: any = await res.json()
+    expect(body.months).toBe(24)
+  })
+
   it("GET /api/snapshots/live returns parsed live data", async () => {
     const sampleGeoJson = JSON.stringify({
       type: "FeatureCollection",
