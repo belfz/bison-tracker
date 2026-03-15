@@ -58,7 +58,7 @@
         fillOpacity: 0.45,
       })
 
-      const sexLabel = s.sex === "f" ? "Female" : s.sex === "m" ? "Male" : s.sex
+      const sexLabel = s.sex === "f" ? "F" : s.sex === "m" ? "M" : s.sex
       rect.bindPopup(
         `<strong>${s.num_individuals} individual${s.num_individuals !== 1 ? "s" : ""}</strong><br>(${sexLabel})`,
       )
