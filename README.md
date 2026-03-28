@@ -5,7 +5,7 @@ A Cloudflare Worker that scrapes a public GeoJSON API for European bison (żubr)
 **Live UI:** [https://master.bison-tracker-ui.pages.dev/](https://master.bison-tracker-ui.pages.dev/)
 **API base:** `https://bison-tracker.bison-tracker.workers.dev`
 
-![Bison Tracker mobile view](images/mobile_view.jpeg)
+Bison Tracker UI
 
 ## Prerequisites
 
@@ -92,14 +92,16 @@ The UI is mobile-friendly and can be pinned to the iOS home screen as a web app.
 
 ## API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/snapshots` | List snapshots (paginated via `limit` and `offset`) |
-| GET | `/api/snapshots/recent` | Recent snapshots with sightings (cursor-based via `limit` and `before`) |
-| GET | `/api/snapshots/live` | Live proxy of the source API (cached for 5 min on the edge) |
-| GET | `/api/snapshots/latest` | Most recent stored snapshot with sightings |
-| GET | `/api/snapshots/:id` | Specific snapshot with its sightings |
-| GET | `/api/heatmap` | Frequency heatmap of sighting locations (`months` param, cached 6 hrs) |
+
+| Method | Path                    | Description                                                             |
+| ------ | ----------------------- | ----------------------------------------------------------------------- |
+| GET    | `/api/snapshots`        | List snapshots (paginated via `limit` and `offset`)                     |
+| GET    | `/api/snapshots/recent` | Recent snapshots with sightings (cursor-based via `limit` and `before`) |
+| GET    | `/api/snapshots/live`   | Live proxy of the source API (cached for 5 min on the edge)             |
+| GET    | `/api/snapshots/latest` | Most recent stored snapshot with sightings                              |
+| GET    | `/api/snapshots/:id`    | Specific snapshot with its sightings                                    |
+| GET    | `/api/heatmap`          | Frequency heatmap of sighting locations (`months` param, cached 6 hrs)  |
+
 
 ### Examples
 
