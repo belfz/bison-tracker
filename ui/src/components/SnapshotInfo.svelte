@@ -6,7 +6,7 @@
 
   let isLive = $derived(entry.snapshot.id === null)
 
-  let dateText = $derived(isLive ? "Live" : formatDate(entry.snapshot.fetched_at))
+  let dateText = $derived(isLive ? "Live 🟢" : formatDate(entry.snapshot.fetched_at))
 
   let metaText = $derived.by(() => {
     if (isLive) {
